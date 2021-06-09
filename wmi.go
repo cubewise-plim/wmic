@@ -47,14 +47,26 @@ func QueryAll(class string, out interface{}) ([]RecordError, error) {
 	return Query(class, []string{}, "", out)
 }
 
+func QueryAllWithTimeout(class string, out interface{}, timeout string) ([]RecordError, error) {
+	return QueryWithTimeout(class, []string{}, "", out, timeout)
+}
+
 // QueryColumns returns all items with specific columns
 func QueryColumns(class string, columns []string, out interface{}) ([]RecordError, error) {
 	return Query(class, columns, "", out)
 }
 
+func QueryColumnsWithTimeout(class string, columns []string, out interface{}, timeout string) ([]RecordError, error) {
+	return QueryWithTimeout(class, columns, "", out, timeout)
+}
+
 // QueryWhere returns all columns for where clause
 func QueryWhere(class, where string, out interface{}) ([]RecordError, error) {
 	return Query(class, []string{}, where, out)
+}
+
+func QueryWhereWithTimeout(class, where string, out interface{}, timeout string) ([]RecordError, error) {
+	return QueryWithTimeout(class, []string{}, where, out, timeout)
 }
 
 // Query returns a WMI query with the given parameters
