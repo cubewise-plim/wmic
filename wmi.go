@@ -3,15 +3,19 @@ package wmic
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var fieldCache = map[string]string{}
+
+const TIMEOUT_DEFAULT = "30m"
 
 // RecordError holds information about an error for record in the WMI result
 type RecordError struct {
@@ -45,9 +49,17 @@ func QueryAll(class string, out interface{}) ([]RecordError, error) {
 	return Query(class, []string{}, "", out)
 }
 
+func QueryAllWithTimeout(class string, out interface{}, timeout string) ([]RecordError, error) {
+	return QueryWithTimeout(class, []string{}, "", out, timeout)
+}
+
 // QueryColumns returns all items with specific columns
 func QueryColumns(class string, columns []string, out interface{}) ([]RecordError, error) {
 	return Query(class, columns, "", out)
+}
+
+func QueryColumnsWithTimeout(class string, columns []string, out interface{}, timeout string) ([]RecordError, error) {
+	return QueryWithTimeout(class, columns, "", out, timeout)
 }
 
 // QueryWhere returns all columns for where clause
@@ -55,8 +67,16 @@ func QueryWhere(class, where string, out interface{}) ([]RecordError, error) {
 	return Query(class, []string{}, where, out)
 }
 
+func QueryWhereWithTimeout(class, where string, out interface{}, timeout string) ([]RecordError, error) {
+	return QueryWithTimeout(class, []string{}, where, out, timeout)
+}
+
 // Query returns a WMI query with the given parameters
 func Query(class string, columns []string, where string, out interface{}) ([]RecordError, error) {
+	return QueryWithTimeout(class, []string{}, where, out, TIMEOUT_DEFAULT)
+}
+
+func QueryWithTimeout(class string, columns []string, where string, out interface{}, timeout string) ([]RecordError, error) {
 
 	recordErrors := []RecordError{}
 
@@ -117,7 +137,16 @@ func Query(class string, columns []string, where string, out interface{}) ([]Rec
 	}
 	query = append(query, "/format:rawxml")
 	query = append(query, "/VALUE")
-	cmd := exec.Command("wmic", query...)
+
+	duration, errParse := time.ParseDuration(timeout)
+	if errParse != nil {
+		return recordErrors, errParse
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), duration)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "wmic", query...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
