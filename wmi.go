@@ -15,6 +15,8 @@ import (
 
 var fieldCache = map[string]string{}
 
+const TIMEOUT_DEFAULT = "30m"
+
 // RecordError holds information about an error for record in the WMI result
 type RecordError struct {
 	Class   string
@@ -71,7 +73,7 @@ func QueryWhereWithTimeout(class, where string, out interface{}, timeout string)
 
 // Query returns a WMI query with the given parameters
 func Query(class string, columns []string, where string, out interface{}) ([]RecordError, error) {
-	return QueryWithTimeout(class, []string{}, where, out, "30min")
+	return QueryWithTimeout(class, []string{}, where, out, TIMEOUT_DEFAULT)
 }
 
 func QueryWithTimeout(class string, columns []string, where string, out interface{}, timeout string) ([]RecordError, error) {
