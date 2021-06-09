@@ -59,6 +59,10 @@ func QueryWhere(class, where string, out interface{}) ([]RecordError, error) {
 
 // Query returns a WMI query with the given parameters
 func Query(class string, columns []string, where string, out interface{}) ([]RecordError, error) {
+	return QueryWithTimeout(class, []string{}, where, out, "30min")
+}
+
+func QueryWithTimeout(class string, columns []string, where string, out interface{}, timeout string) ([]RecordError, error) {
 
 	recordErrors := []RecordError{}
 
@@ -120,7 +124,12 @@ func Query(class string, columns []string, where string, out interface{}) ([]Rec
 	query = append(query, "/format:rawxml")
 	query = append(query, "/VALUE")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60000*time.Millisecond)
+	duration, errParse := time.ParseDuration(timeout)
+	if errParse != nil {
+		return recordErrors, errParse
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "wmic", query...)
