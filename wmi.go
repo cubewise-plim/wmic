@@ -3,12 +3,14 @@ package wmic
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var fieldCache = map[string]string{}
@@ -117,7 +119,11 @@ func Query(class string, columns []string, where string, out interface{}) ([]Rec
 	}
 	query = append(query, "/format:rawxml")
 	query = append(query, "/VALUE")
-	cmd := exec.Command("wmic", query...)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60000*time.Millisecond)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "wmic", query...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
